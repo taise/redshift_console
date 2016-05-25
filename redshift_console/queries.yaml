@@ -1,13 +1,29 @@
 inflight_queries:
-  SELECT query AS id,
-      TRIM(usename) AS username,
-      starttime AS TIMESTAMP,
-      text AS query,
-      pid AS pid
-  FROM svv_query_inflight
-  JOIN pg_user
-  ON svv_query_inflight.userid = pg_user.usesysid
-  ORDER BY id, SEQUENCE;
+  WITH queries AS (
+    SELECT
+      query,
+      starttime,
+      text,
+      pid,
+      userid
+    FROM
+      svv_query_inflight
+    WHERE
+      starttime >= GETDATE() - INTERVAL '3 hours'
+  )
+  SELECT
+    query AS id,
+    TRIM(usename) AS username,
+    starttime AS TIMESTAMP,
+    text AS query,
+    pid AS pid
+  FROM queries
+    INNER JOIN pg_user
+      ON queries.userid = pg_user.usesysid
+  ORDER BY
+     id,
+     starttime
+  ;
 queries_queue:
   SELECT position,
       start_time as timestamp,
